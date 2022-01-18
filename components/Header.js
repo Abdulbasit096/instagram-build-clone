@@ -8,10 +8,13 @@ import {
   PaperAirplaneIcon,
   MenuIcon,
 } from "@heroicons/react/outline";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 function Header() {
+  const { data: session } = useSession();
+
   return (
-    <div className='shadow-sm border-b bg-white sticky top-0 z-50'>
+    <div className="shadow-sm border-b bg-white sticky top-0 z-50">
       <div className="flex justify-between  max-w-6xl mx-5 lg:mx-auto">
         {/* Left */}
         <div className="hidden lg:inline-grid relative  w-24 cursor-pointer">
@@ -45,14 +48,28 @@ function Header() {
         <div className="flex items-center justify-end space-x-4">
           <HomeIcon className="navBtn" />
           <MenuIcon className="h-5 w-5 md:hidden cursor-pointer " />
-          <div className="relative navBtn">
-              <PaperAirplaneIcon className="navBtn rotate-45 " />
-              <div className='absolute -top-1 -right-2 text-xs bg-red-500 w-5 h-5 rounded-full text-center text-white animate-pulse '>3</div>
-          </div>
-          <PlusCircleIcon className="navBtnNotHidden" />
-          <UserGroupIcon className="navBtn" />
-          <HeartIcon className="navBtn" />
-          <img src="https://avatars.githubusercontent.com/u/55397611?v=4" alt="Profile" className="h-8 w-8 rounded-full cursor-pointer" />
+
+          {session ? (
+            <>
+              <div className="relative navBtn">
+                <PaperAirplaneIcon className="navBtn rotate-45 " />
+                <div className="absolute -top-1 -right-2 text-xs bg-red-500 w-5 h-5 rounded-full text-center text-white animate-pulse ">
+                  3
+                </div>
+              </div>
+              <PlusCircleIcon className="navBtnNotHidden" />
+              <UserGroupIcon className="navBtn" />
+              <HeartIcon className="navBtn" />
+              <img
+                onClick={signOut}
+                src={session?.user.image}
+                alt="Profile"
+                className="h-8 w-8 rounded-full cursor-pointer"
+              />
+            </>
+          ) : (
+            <button onClick={signIn}>Sign In</button>
+          )}
         </div>
       </div>
     </div>
