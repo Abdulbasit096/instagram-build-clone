@@ -7,49 +7,47 @@ import {
   PaperAirplaneIcon,
 } from "@heroicons/react/outline";
 import { HeartIcon as HeartIconFilled } from "@heroicons/react/solid";
-
-const posts = [
-  {
-    id: "123",
-    username: "a.bdul_b.asit",
-    userImg: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    image: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    caption: "This is me",
-  },
-  {
-    id: "123",
-    username: "a.bdul_b.asit",
-    userImg: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    image: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    caption: "This is me",
-  },
-  {
-    id: "123",
-    username: "a.bdul_b.asit",
-    userImg: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    image: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    caption: "This is me",
-  },
-  {
-    id: "123",
-    username: "a.bdul_b.asit",
-    userImg: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    image: "https://avatars.githubusercontent.com/u/55397611?v=4",
-    caption: "This is me",
-  },
-];
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+} from "firebase/firestore";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { db } from "../firebase";
+import Moment from "react-moment";
 
 function Posts() {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(
+    () =>
+      onSnapshot(
+        query(collection(db, "posts"), orderBy("timestamp", "desc")),
+        (snapshot) => {
+          setPosts(snapshot.docs);
+        }
+      ),
+
+    [db]
+  );
+
   return (
     <div>
       {posts.map((post) => (
         <Post
           key={post.id}
           id={post.id}
-          username={post.username}
-          userImg={post.userImg}
-          image={post.image}
-          caption={post.caption}
+          username={post.data().username}
+          userImg={post.data().profileImg}
+          image={post.data().image}
+          caption={post.data().caption}
         />
       ))}
     </div>
@@ -59,8 +57,59 @@ function Posts() {
 export default Posts;
 
 function Post({ id, username, userImg, image, caption }) {
+  const { data: session } = useSession();
+  const [comments, setComments] = useState([]);
+  const [comment, setComment] = useState("");
+  const [likes, setLikes] = useState([]);
+
+  useEffect(
+    () =>
+      onSnapshot(
+        query(
+          collection(db, "posts", id, "comments"),
+          orderBy("timestamp", "desc")
+        ),
+        (snapshot) => {
+          setComments(snapshot.docs);
+        }
+      ),
+
+    [id]
+  );
+  useEffect(
+    () =>
+      onSnapshot(query(collection(db, "posts", id, "likes")), (snapshot) => {
+        setLikes(snapshot.docs);
+      }),
+
+    [id]
+  );
+
+  const likePost = async () => {
+    await setDoc(doc(db, "posts", id, "likes", session.user.uid), {
+      username: session.user.username,
+    });
+  };
+  const removeLikePost = async () => {
+    await deleteDoc(doc(db, "posts", id, "likes", session.user.uid));
+  };
+
+  const sentComment = async (e) => {
+    e.preventDefault();
+
+    const commentToSend = comment;
+    setComment("");
+
+    await addDoc(collection(db, "posts", id, "comments"), {
+      comment: commentToSend,
+      username: session.user.username,
+      profileImg: session.user.image,
+      timestamp: serverTimestamp(),
+    });
+  };
+
   return (
-    <div className='bg-white my-7 border rounded-sm'>
+    <div className="bg-white my-7 border rounded-sm">
       {/* Header */}
       <div className="flex items-center p-5">
         <img
@@ -73,28 +122,77 @@ function Post({ id, username, userImg, image, caption }) {
       {/* Image */}
       <img className="w-full  object-cover" src={image} alt="" />
       {/* Buttons */}
-      <div className="flex items-center justify-between px-4 pt-4">
-        <div className="flex items-center justify-center space-x-3">
-          <HeartIcon className="navBtnNotHidden" />
-          <ChatIcon className="navBtnNotHidden" />
-          <PaperAirplaneIcon className="navBtnNotHidden" />
+
+      {session && (
+        <div className="flex items-center justify-between px-4 pt-4">
+          <div className="flex items-center justify-center space-x-3">
+            {likes.filter((like) => like.id === session.user.uid)
+              .length > 0 ? (
+              <HeartIconFilled
+                className="navBtnNotHidden text-red-500"
+                onClick={removeLikePost}
+              />
+            ) : (
+              <HeartIcon onClick={likePost} className="navBtnNotHidden" />
+            )}
+            <ChatIcon className="navBtnNotHidden" />
+            <PaperAirplaneIcon className="navBtnNotHidden" />
+          </div>
+          <div>
+            <BookmarkIcon className="navBtnNotHidden" />
+          </div>
         </div>
-        <div>
-          <BookmarkIcon className="navBtnNotHidden" />
-        </div>
-      </div>
-      {/* Captions */}
-     <p className='p-5 truncate'>
-        <span className='font-bold mr-1'>{username}</span> 
+      )}
+      <p className="mt-4 ml-4 font-bold">
+        {likes.length} {likes.length > 1 ? "Likes" : "Like"}
+      </p>
+      {/* Caption */}
+      <p className="p-5 truncate">
+        <span className="font-bold mr-1">{username}</span>
         {caption}
-     </p>
-      <form className="flex items-center p-4">
-        <EmojiHappyIcon className="h-7"/>
-        <input type="text" 
-        placeholder='Add a comment...'
-        className="border-none flex-1 focus:ring-0 outline-none"  />
-        <button className='font-semibold text-blue-400' type="submit">Post</button>
-      </form>
+      </p>
+
+      <div className="ml-10 h-20 overflow-y-scroll scrollbar-hide">
+        {comments.length > 0 &&
+          comments.map((comment) => (
+            <div key={comment.id} className="flex items-center space-x-4 mb-3">
+              <img
+                className="h-8 w-8 rounded-full"
+                src={comment.data().profileImg}
+                alt=""
+              />
+              <p className="text-sm flex-1 ">
+                <span className="font-bold">{comment.data().username} </span>
+                {comment.data().comment}
+              </p>
+              <Moment fromNow className="pr-5 text-sm">
+                {comment.data().timestamp?.toDate()}
+              </Moment>
+            </div>
+          ))}
+      </div>
+
+      {session && (
+        <form className="flex items-center p-4">
+          <EmojiHappyIcon className="h-7" />
+          <input
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            type="text"
+            placeholder="Add a comment..."
+            className="border-none flex-1 focus:ring-0 outline-none"
+          />
+          <button
+            onClick={(e) => sentComment(e)}
+            type="submit"
+            disabled={!comment.trim()}
+            className="font-semibold text-blue-400"
+            type="submit"
+          >
+            Post
+          </button>
+        </form>
+      )}
       {/* Input */}
     </div>
   );

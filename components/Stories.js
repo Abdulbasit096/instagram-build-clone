@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
+import {useSession} from 'next-auth/react';
+
 
 function Stories() {
   const [suggestions, setSuggestions] = useState([]);
+  const { data:session} = useSession();
+
 
   useEffect(() => {
     fetch('https://api.github.com/users?page=1&per_page=25')
@@ -11,7 +15,7 @@ function Stories() {
 
   return (
     <div className="flex space-x-2 p-6 bg-white shadow-sm mt-8 border-gray-200 rounded-sm overflow-x-scroll scrollbar-hide">
-      <Story username='a.bdul_b.asit' image='https://avatars.githubusercontent.com/u/55397611?v=4' />
+      {session && <Story username={session.user.username} image={session.user.image} />}
       {suggestions?.map((profile)=>(
         <Story image={profile.avatar_url} username={profile.login} key={profile.id} />
       ))}

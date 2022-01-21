@@ -9,9 +9,13 @@ import {
   MenuIcon,
 } from "@heroicons/react/outline";
 import { signIn, signOut, useSession } from "next-auth/react";
+import Link from "next/link";
+import {useRecoilState} from 'recoil'
+import {modalState} from '../atoms/modalAtom'
 
 function Header() {
   const { data: session } = useSession();
+  const [open , setOpen] = useRecoilState(modalState)
 
   return (
     <div className="shadow-sm border-b bg-white sticky top-0 z-50">
@@ -57,7 +61,7 @@ function Header() {
                   3
                 </div>
               </div>
-              <PlusCircleIcon className="navBtnNotHidden" />
+              <PlusCircleIcon onClick={() =>setOpen(true)} className="navBtnNotHidden" />
               <UserGroupIcon className="navBtn" />
               <HeartIcon className="navBtn" />
               <img
@@ -68,7 +72,7 @@ function Header() {
               />
             </>
           ) : (
-            <button onClick={signIn}>Sign In</button>
+            <Link href='/auth/signin'>Sign In</Link>
           )}
         </div>
       </div>
