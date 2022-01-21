@@ -72,7 +72,7 @@ function Header() {
               />
             </>
           ) : (
-            <Link href='/auth/signin'>Sign In</Link>
+            <button onClick={signIn}>Sign In</button>
           )}
         </div>
       </div>

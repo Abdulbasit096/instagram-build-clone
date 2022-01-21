@@ -120,7 +120,7 @@ function Post({ id, username, userImg, image, caption }) {
         <DotsHorizontalIcon className="h-5" />
       </div>
       {/* Image */}
-      <img className="w-full  object-cover" src={image} alt="" />
+      <img className="w-full  object-cover" src={image}/>
       {/* Buttons */}
 
       {session && (
@@ -159,7 +159,6 @@ function Post({ id, username, userImg, image, caption }) {
               <img
                 className="h-8 w-8 rounded-full"
                 src={comment.data().profileImg}
-                alt=""
               />
               <p className="text-sm flex-1 ">
                 <span className="font-bold">{comment.data().username} </span>
@@ -187,7 +186,6 @@ function Post({ id, username, userImg, image, caption }) {
             type="submit"
             disabled={!comment.trim()}
             className="font-semibold text-blue-400"
-            type="submit"
           >
             Post
           </button>

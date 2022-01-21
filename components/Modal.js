@@ -111,7 +111,6 @@ function Modal() {
                       title="Click to remove image"
                       className="w-full cursor-pointer object-contain"
                       src={selectedfile}
-                      alt=""
                     />
                   </div>
                 )}
